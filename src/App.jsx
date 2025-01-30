@@ -1,34 +1,38 @@
-
-import { useState } from 'react'
-import './App.css'
-import Blogs from './components/Blogs/Blogs'
-import Header from './components/Header/Header'
-import Hero from './components/Hero/Hero'
-import Main from './components/Main/Main'
-import SideBar from './components/SideBar/SideBar'
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react';
+import './App.css';
+import Blogs from './components/Blogs/Blogs';
+import Header from './components/Header/Header';
+import Hero from './components/Hero/Hero';
+import Main from './components/Main/Main';
+import SideBar from './components/SideBar/SideBar';
 import toast, { Toaster } from 'react-hot-toast';
 
 function App() {
-  // let time=0
-  // const calorie=0
-  const [cart,setCart]=useState([])
-  const [price,setPrice]=useState([])
-  const [preparing,setPreparing]=useState([])
+  const [cart, setCart] = useState([]);
+  const [price, setPrice] = useState(() => {
+    return JSON.parse(localStorage.getItem('cheak')) || [];
+  });
+  const [preparing, setPreparing] = useState(() => {
+    return JSON.parse(localStorage.getItem('preparing')) || [];
+  });
 
-  useEffect(()=>{
+  // Load cart data from fakeData.json
+  useEffect(() => {
     fetch('fakeData.json')
-    .then(res=>res.json())
-    .then(data=>setCart(data))
-  },[])
+      .then((res) => res.json())
+      .then((data) => setCart(data));
+  }, []);
 
-  const handleAdd=(p)=>{
-    const cheak=price.find(item=>item.recipe_id == p.recipe_id)
-    if(!cheak){
-      setPrice([...price,p])
-    }
-    else{
-      toast.success('Already  exist .', {
+  // Add item to the cart and store it in localStorage
+  const handleAdd = (p) => {
+    const exists = price.find((item) => item.recipe_id === p.recipe_id);
+
+    if (!exists) {
+      const updatedPrice = [...price, p];
+      setPrice(updatedPrice);
+      localStorage.setItem('cheak', JSON.stringify(updatedPrice));
+    } else {
+      toast.success('Already exists.', {
         style: {
           border: '1px solid #713200',
           padding: '16px',
@@ -38,53 +42,44 @@ function App() {
           primary: '#713200',
           secondary: '#FFFAEE',
         },
-      })
+      });
     }
-  }
+  };
 
-  const handlePreparing=(id)=>{
-    const newCard=price.filter(item=>item.recipe_id !==id)
-    console.log(newCard)
-    setPrice(newCard)
-    addPreparing(id)
-   
-  }
-  const addPreparing=(id)=>{
-    const newCart=cart.find(item=>item.recipe_id === id)
-    
-    setPreparing([...preparing,newCart])
-   
+  // Move item from price list to preparing list and update localStorage
+  const handlePreparing = (id) => {
+    const updatedPrice = price.filter((item) => item.recipe_id !== id);
+    const preparingItem = price.find((item) => item.recipe_id === id);
 
-  }
+    if (preparingItem) {
+      const updatedPreparing = [...preparing, preparingItem];
+      setPrice(updatedPrice);
+      setPreparing(updatedPreparing);
 
+      localStorage.setItem('cheak', JSON.stringify(updatedPrice));
+      localStorage.setItem('preparing', JSON.stringify(updatedPreparing));
+    }
+  };
 
-
-
- 
   return (
     <>
-     <div className='max-w-[1320px] mx-auto mt-12' >
-      <Header></Header>
-      <div className='mt-12'>
-        <Hero></Hero>
+      <div className="max-w-[1320px] mx-auto mt-12">
+        <Header />
+        <div className="mt-12">
+          <Hero />
+        </div>
+        <div className="mt-12">
+          <Main />
+        </div>
+        {/* Blogs and Sidebar */}
+        <div className="mt-12 flex flex-col md:flex-row">
+          <Blogs cart={cart} handleAdd={handleAdd} />
+          <SideBar price={price} handlePreparing={handlePreparing} preparing={preparing} />
+        </div>
+        <Toaster position="top-right" reverseOrder={false} />
       </div>
-      <div className='mt-12'><Main></Main></div>
-      {/* blogs  */}
-      <div className='mt-12 flex flex-col md:flex-row'>
-        <Blogs cart={cart} handleAdd={handleAdd}></Blogs>
-        <SideBar price={price} handlePreparing={handlePreparing} preparing={preparing}></SideBar>
-
-      </div>
-      <div><Toaster
-  position="top-right"
-  reverseOrder={false}
-/></div>
-     </div>
-     
-      
     </>
-  )
+  );
 }
 
-export default App
-
+export default App;
